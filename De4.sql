@@ -94,8 +94,8 @@ FOR DELETE
 AS
 BEGIN
 	DECLARE @dem int
-	SELECT @dem=COUNT(MaHD) FROM deleted
-	IF(@dem<2)
+	SELECT @dem=COUNT(MaHD) FROM CTHoaDon
+	IF(@dem<1)
 	BEGIN
 		PRINT N'Đây là dòng hoa đơn duy nhất'
 		ROLLBACK TRAN
@@ -111,15 +111,23 @@ BEGIN
 		WHERE deleted.MaVT=VatTu.MaVT
 	END
 END
+GO
 CREATE TRIGGER trg_insert ON CTHoaDon
 FOR INSERT
+AS
 BEGIN 
-	
+	UPDATE VatTu
+	SET SLCon=SLCon-inserted.SLBan
+	FROM VatTu
+	INNER JOIN inserted
+	ON VatTu.MaVT=inserted.MaVT
+END
 GO
 SELECT * FROM VatTu
 SELECT * FROM CTHoaDon
 GO
-DELETE FROM CTHoaDon WHERE MaVT='vt01' AND MaHD='hd01'
+DELETE FROM CTHoaDon WHERE MaVT='vt02' AND MaHD='hd01'
+INSERT INTO CTHoaDon VALUES('hd02','vt03',2000,10)
 GO
 SELECT * FROM VatTu
 SELECT * FROM CTHoaDon
