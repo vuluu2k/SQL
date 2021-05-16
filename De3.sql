@@ -46,7 +46,7 @@ GO
 INSERT INTO Lop
 VALUES ('l01',N'CNNT01','k01'),
 		('l02',N'HTTT01','k01'),
-		('l03',N'KHMT01','k02')
+		('l03',N'KHMT01','k02'),
 --Thêm dữ liệu vào bảng Cung ứng
 GO 
 INSERT INTO SinhVien
@@ -79,17 +79,16 @@ GO
 SELECT * FROM vLop
 --Cau 3
 GO
-ALTER PROCEDURE sp_list(@tenkhoa nvarchar(40),@x int)
+CREATE PROCEDURE sp_list(@tenkhoa nvarchar(40),@x int)
 AS 
 BEGIN
-	DECLARE @siso int
 	IF NOT EXISTS(SELECT COUNT(MaSV)FROM SinhVien s 
 						INNER JOIN Lop l
 						ON s.MaLop=l.MaLop
 						INNER JOIN Khoa k
 						ON k.MaKhoa=l.MaKhoa WHERE TenKhoa=@tenkhoa
 						GROUP BY s.MaLop
-						HAVING (@siso)>@x)
+						HAVING COUNT(MaSV)>@x)
 	BEGIN
 		PRINT N'Không có lớp nào có sĩ số lơn hơn đã nhâp'
 		ROLLBACK TRAN
@@ -97,19 +96,40 @@ BEGIN
 	END	
 	ELSE
 	BEGIN
-		SELECT Lop.MaLop,TenLop,SiSo=COUNT(MaSV) FROM Lop INNER JOIN SinhVien ON Lop.MaLop=SinhVien.MaLop INNER JOIN Khoa ON Khoa.MaKhoa=Lop.MaKhoa WHERE TenKhoa=@tenkhoa GROUP BY Lop.MaLop,TenLop HAVING (@siso)>@x
+		SELECT Lop.MaLop,TenLop,SiSo=COUNT(MaSV) FROM Lop INNER JOIN SinhVien ON Lop.MaLop=SinhVien.MaLop INNER JOIN Khoa ON Khoa.MaKhoa=Lop.MaKhoa WHERE TenKhoa=@tenkhoa GROUP BY Lop.MaLop,TenLop HAVING COUNT(MaSV)>@x
 	END
 END
 --Thực thi
 GO
-EXEC sp_list N'Công nghệ thông tin', 0
+SELECT COUNT(MaSV) FROM SinhVien s 
+						INNER JOIN Lop l
+						ON s.MaLop=l.MaLop
+						INNER JOIN Khoa k
+						ON k.MaKhoa=l.MaKhoa
+						GROUP BY s.MaLop
+						HAVING COUNT(MaSV)>1
+EXEC sp_list N'Công nghệ thông tin', 1
 --Cau 4
 GO
-CREATE TRIGGER Del_Lop ON LOP
+ALTER TRIGGER Del_Lop ON LOP
 FOR DELETE
 AS
 	BEGIN
-		IF EXISTS (SELECT * FROM deleted INNER JOIN SinhVien ON deleted.MaLop=SinhVien.MaLop)
-
+		DECLARE @SiSo int, @tenlop nvarchar(40)
+		SELECT @tenlop=deleted.TenLop FROM deleted
+		SELECT @SiSo=COUNT(MaSV) FROM SinhVien s INNER JOIN deleted ON s.MaLop=deleted.MaLop
+		IF(@SiSo>0)
+		BEGIN
+			PRINT N'Tên Lớp '+@tenlop+N' có sinh viên với sĩ số là: '+CONVERT(nvarchar(40),@SiSo) 
+			ROLLBACK TRAN
+			RETURN
+		END
 	END
-	SELECT Lop.MaLop,MaSV FROM Lop INNER JOIN SinhVien ON Lop.MaLop=SinhVien.MaLop GROUP BY Lop.MaLop,MaSV
+GO
+SELECT * FROM Lop
+GO
+ALTER TABLE SinhVien NOCHECK CONSTRAINT ALL
+GO
+DELETE FROM Lop WHERE MaLop='l04'
+GO
+ALTER TABLE SinhVien CHECK CONSTRAINT ALL
