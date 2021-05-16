@@ -108,4 +108,37 @@ GO
 SELECT * FROM SinhVien
 --Cau 4
 GO
-CREATE TRIGGER 
+CREATE TRIGGER trg_update ON SinhVien
+FOR UPDATE
+AS
+BEGIN
+	DECLARE @old char(4),@new char(4), @SiSo int,@SiSo1 int,@tenlop nvarchar(40)
+	SELECT @old=deleted.MaLop FROM deleted
+	SELECT @new=inserted.MaLop FROM inserted
+	SELECT @SiSo1=SiSo FROM Lop INNER JOIN deleted ON Lop.MaLop=deleted.MaLop WHERE Lop.MaLop=@old
+	SELECT @SiSo=SiSo,@tenlop=TenLop FROM Lop INNER JOIN inserted ON Lop.MaLop=inserted.MaLop WHERE Lop.MaLop=@new
+	IF(@SiSo>=80)
+	BEGIN
+		PRINT N'Lớp '+@tenlop+N' đã đủ'
+		RETURN
+		ROLLBACK TRAN
+	END
+	ELSE
+	BEGIN
+		UPDATE Lop
+		SET @SiSo=@SiSo+1,@SiSo1=@SiSo1-1
+		FROM Lop 
+		INNER JOIN deleted
+		ON Lop.MaLop=deleted.MaLop
+		INNER JOIN inserted
+		ON Lop.MaLop=inserted.MaLop
+	END
+END
+GO
+SELECT * FROM Lop
+SELECT * FROM SinhVien
+GO
+UPDATE SinhVien SET MaLop='l01' WHERE MaSV='sv03'
+GO
+SELECT * FROM Lop
+SELECT * FROM SinhVien
