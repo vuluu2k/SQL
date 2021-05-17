@@ -2,12 +2,12 @@
 GO
 IF EXISTS (SELECT name
 			FROM sys.databases
-			WHERE name='QLbanhang')
-			DROP database QLbanhang
+			WHERE name='QLbanhang2')
+			DROP database QLbanhang2
 GO
-CREATE DATABASE QLbanhang
+CREATE DATABASE QLbanhang2
 GO
-USE QLbanhang
+USE QLbanhang2
 --Tạo bảng  Công ty
 GO 
 CREATE TABLE CongTy
@@ -81,7 +81,7 @@ GO
 SELECT dbo.fn_TongTien(N'Công ty Xuất khẩu',N'Máy tính') AS TongTienCungUng
 --Câu 3
 GO
-CREATE PROCEDURE sp_SanPham(@tenct nvarchar(40),@giacu money)
+CREATE PROCEDURE sp_SanPham(@tenct nvarchar(40),@giacux money, @giacuy money)
 AS
 BEGIN
 	IF NOT EXISTS(SELECT * FROM CongTy WHERE TenCongTy=@tenct)
@@ -99,13 +99,13 @@ BEGIN
 													ON s.MaSanPham=c.MaSanPham
 													INNER JOIN CongTy o
 													ON o.MaCongTy=c.MaCongTy
-													WHERE TenCongTy=@tenct AND GiaCungUng=@giacu
+													WHERE TenCongTy=@tenct AND GiaCungUng BETWEEN @giacux AND @giacuy
 		RETURN 0
 	END
 END
 --Thực thi
 GO
-EXECUTE sp_SanPham N'Công ty Xuất khẩu',200
+EXECUTE sp_SanPham N'Công ty Xuất khẩu',199,500
 --EXECUTE sp_SanPham N'Công ty Xuất khẩu 10',200
 --Câu 4
 GO
